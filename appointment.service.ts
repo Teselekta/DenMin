@@ -126,61 +126,43 @@ export class AppointmentService {
                 performerAppointmentsTime,
                 performerAppointmentsLastsUntil,
               ).contains(appointmentLastsUntil) || 
-              !Interval.fromDateTimes(startOfDay, endOfDay).contains(appointmentTime)
+              !Interval.fromDateTimes(startOfDay, endOfDay).contains(appointmentTime) || !Interval.fromDateTimes(startOfDay, endOfDay).contains(appointmentLastsUntil)
             ) {
               throw new HttpException(
                 'You can not appoint current time, please try another time',
                 HttpStatus.BAD_REQUEST,
               );
-                  } else {
-                      await getConnection()
-                      .createQueryBuilder()
-                      .insert()
-                      .into(Appointment)
-                      .values([
-                          { appointmentDay: appointmentDay, appointmentTime: appointmentTime.toISOTime(), appointmentLastsUntil: appointmentLastsUntil.toISOTime(), performerID: performerID, userID: userID }
-                      ])
-                      .execute()
-                      const appointmentFullData = {
-                          userID: Number(userID),
-                          performerID: Number(performerID),
-                          appointmentDay: appointmentDay,
-                          appointmentTime: appointmentTime.toISOTime(),
-                          appointmentLastsUntil: appointmentLastsUntil
-                      }
-                      return appointmentFullData
               }
-            
-          } 
-          // await getConnection()
-          //   .createQueryBuilder()
-          //   .insert()
-          //   .into(Appointment)
-          //   .values([
-          //     {
-          //       appointmentDay: appointmentDay,
-          //       appointmentTime: appointmentTime.toISOTime(),
-          //       appointmentLastsUntil: appointmentLastsUntil.toISOTime(),
-          //       performerID: performerID,
-          //       userID: userID,
-          //     },
-          //   ])
-          //   .execute();
-          // const appointmentFullData = {
-          //   userID: Number(userID),
-          //   performerID: Number(performerID),
-          //   appointmentDay: appointmentDay,
-          //   appointmentTime: appointmentTime.toISOTime(),
-          //   appointmentLastsUntil: appointmentLastsUntil,
-          // };
-          // return appointmentFullData;
+          } await getConnection()
+          .createQueryBuilder()
+          .insert()
+          .into(Appointment)
+          .values([
+            {
+              appointmentDay: appointmentDay,
+              appointmentTime: appointmentTime.toISOTime(),
+              appointmentLastsUntil: appointmentLastsUntil.toISOTime(),
+              performerID: performerID,
+              userID: userID,
+            },
+          ])
+          .execute();
+        const appointmentFullData = {
+          userID: Number(userID),
+          performerID: Number(performerID),
+          appointmentDay: appointmentDay,
+          appointmentTime: appointmentTime.toISOTime(),
+          appointmentLastsUntil: appointmentLastsUntil,
+        };
+        return appointmentFullData;
+          
         } else { 
-          if (!Interval.fromDateTimes(startOfDay, endOfDay).contains(appointmentTime)) {
+          if (!Interval.fromDateTimes(startOfDay, endOfDay).contains(appointmentTime) || !Interval.fromDateTimes(startOfDay, endOfDay).contains(appointmentLastsUntil)) {
             throw new HttpException(
               'You can not appoint current time, please try another time',
               HttpStatus.BAD_REQUEST,
             );
-          }
+          } else {
           await getConnection()
             .createQueryBuilder()
             .insert()
@@ -204,6 +186,7 @@ export class AppointmentService {
           };
           return appointmentFullData;
         }
+      }
       } else if (!performer) {
         throw new HttpException(
           'Performer does not exist',
@@ -256,10 +239,11 @@ export class AppointmentService {
         }).minutes
 
         const workTime = Duration.fromObject({
-          minutes: duration + pause
-        }).minutes
+          hours: duration.hours + pause.hours,
+          minutes: duration.minutes + pause.minutes
+        })
 
-        console.log('Work Time:',workTime)
+        console.log(`Work Time: ${workTime.hours}:${workTime.minutes}`)
 
         const appointments = await getRepository(Appointment) 
         .createQueryBuilder('appointment')
